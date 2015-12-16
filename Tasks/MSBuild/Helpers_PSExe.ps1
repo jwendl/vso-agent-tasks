@@ -16,7 +16,6 @@ function Format-MSBuildArguments {
         $MSBuildArguments = "$MSBuildArguments /p:configuration=`"$Configuration`""
     }
 
-    Write-Verbose "MSBuildArguments = $MSBuildArguments"
     $MSBuildArguments
     Trace-VstsLeavingInvocation $MyInvocation
 }
@@ -71,10 +70,10 @@ function Invoke-BuildTools {
         }
 
         if ($Clean) {
-            Invoke-VstsMSBuild -ProjectFile $file -Targets Clean -LogFile "$file-clean.log" -MSBuildPath $MSBuildLocation -CommandLineArgs $MSBuildArguments -NoTimelineLogger:$NoTimelineLogger
+            Invoke-VstsMSBuild -ProjectFile $file -Targets Clean -LogFile "$file-clean.log" -MSBuildPath $MSBuildLocation -AdditionalArguments $MSBuildArguments -NoTimelineLogger:$NoTimelineLogger
         }
 
-        Invoke-VstsMSBuild -ProjectFile $file -LogFile "$file.log" -MSBuildPath $MSBuildLocation -CommandLineArgs $MSBuildArguments -NoTimelineLogger:$NoTimelineLogger
+        Invoke-VstsMSBuild -ProjectFile $file -LogFile "$file.log" -MSBuildPath $MSBuildLocation -AdditionalArguments $MSBuildArguments -NoTimelineLogger:$NoTimelineLogger
     }
 
     Trace-VstsLeavingInvocation $MyInvocation
@@ -115,7 +114,7 @@ function Select-MSBuildLocation {
 
         # Look for a specific version of MSBuild.
         if ($Version -and "$Version".ToUpperInvariant() -ne 'LATEST') {
-            $Location = Get-VstsMSBuildLocation -Version $Version -Architecture $Architecture
+            $Location = Get-VstsMSBuildPath -Version $Version -Architecture $Architecture
 
             # Warn if not found.
             if (!$Location) {
@@ -126,15 +125,13 @@ function Select-MSBuildLocation {
         # Look for the latest version of MSBuild.
         if (!$Location) {
             Write-Verbose 'Searching for latest MSBuild version.'
-            $Location = Get-VstsMSBuildLocation -Version '' -Architecture $Architecture
+            $Location = Get-VstsMSBuildPath -Version '' -Architecture $Architecture
 
             # Throw if not found.
             if (!$Location) {
                 throw (Get-VstsLocString -Key 'MSBuildNotFoundVersion0Architecture1TryDifferent' -ArgumentList $Version, $Architecture)
             }
         }
-
-        Write-Verbose "MSBuild location = $Location"
     }
 
     $Location
