@@ -30,7 +30,7 @@ function Get-SolutionFiles {
 
     Trace-VstsEnteringInvocation $MyInvocation
     if ($Solution.Contains("*") -or $Solution.Contains("?")) {
-        $solutionFiles = Find-Files -LegacyPattern $Solution
+        $solutionFiles = Find-VstsFiles -LegacyPattern $Solution
     } else {
         $solutionFiles = ,$Solution
     }

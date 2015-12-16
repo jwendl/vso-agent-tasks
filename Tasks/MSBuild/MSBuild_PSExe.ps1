@@ -7,7 +7,7 @@ Trace-VstsEnteringInvocation $MyInvocation
 [string]$MSBuildArguments = Get-VstsInput -Name 'MSBuildArguments'
 [string]$Solution = Get-VstsInput -Name 'Solution' -Require
 [string]$Platform = Get-VstsInput -Name 'Platform'
-[string]$Configuration = GetVstsInput -Name 'Configuration'
+[string]$Configuration = Get-VstsInput -Name 'Configuration'
 [bool]$Clean = Get-VstsInput -Name 'Clean' -AsBool
 [bool]$RestoreNuGetPackages = Get-VstsInput 'RestoreNuGetPackages' -AsBool
 [string]$LogProjectEvents = Get-VstsInput -Name 'LogProjectEvents' -AsBool
@@ -15,7 +15,7 @@ Trace-VstsEnteringInvocation $MyInvocation
 [string]$MSBuildArchitecture = Get-VstsInput -Name 'MSBuildArchitecture'
 
 if (!$OmitDotSource) {
-    . $PSScriptRoot\Helpers.ps1
+    . $PSScriptRoot\Helpers_PSExe.ps1
 }
 
 $solutionFiles = Get-SolutionFiles -Solution $Solution
