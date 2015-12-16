@@ -133,6 +133,11 @@
     ],
     "instanceNameFormat": "Build solution $(solution)",
     "execution": {
+        "PowerShellExeTask": {
+            "target": "$(currentDirectory)\\MSBuild_PSExe.ps1",
+            "argumentFormat": "",
+            "workingDirectory": "$(currentDirectory)"
+        },
         "PowerShell": {
             "target": "$(currentDirectory)\\MSBuild.ps1",
             "argumentFormat": "",
