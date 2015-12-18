@@ -1,5 +1,5 @@
 function Format-MSBuildArguments {
-    [cmdletbinding()]
+    [CmdletBinding()]
     param(
         [string]$MSBuildArguments,
         [string]$Platform,
@@ -21,7 +21,7 @@ function Format-MSBuildArguments {
 }
 
 function Get-SolutionFiles {
-    [cmdletbinding()]
+    [CmdletBinding()]
     param(
         [ValidateNotNullOrEmpty()]
         [Parameter(Mandatory = $true)]
@@ -30,12 +30,11 @@ function Get-SolutionFiles {
     Trace-VstsEnteringInvocation $MyInvocation
     if ($Solution.Contains("*") -or $Solution.Contains("?")) {
         $solutionFiles = Find-VstsFiles -LegacyPattern $Solution
+        if (!$solutionFiles.Count) {
+            throw (Get-VstsLocString -Key "SolutionNotFoundUsingSearchPattern0" -ArgumentList $Solution)
+        }
     } else {
         $solutionFiles = ,$Solution
-    }
-
-    if (!$solutionFiles.Count) {
-        throw (Get-VstsLocString -Key "SolutionNotFoundUsingSearchPattern0" -ArgumentList $Solution)
     }
 
     $solutionFiles
@@ -43,7 +42,7 @@ function Get-SolutionFiles {
 }
 
 function Invoke-BuildTools {
-    [cmdletbinding()]
+    [CmdletBinding()]
     param(
         [switch]$NuGetRestore,
         [string[]]$SolutionFiles,
@@ -65,8 +64,8 @@ function Invoke-BuildTools {
                 Write-Host (Get-VstsLocString -Key "DetectedNuGetExtensionsLoaderPath0" -ArgumentList $env:NUGET_EXTENSIONS_PATH)
             }
 
-            $slnFolder = [System.IO.Path]::GetDirectoryName($file)
-            Invoke-VstsTool -FileName $nugetPath -Arguments "restore `"$file`" -NonInteractive" -WorkingDirectory $slnFolder
+            $slnDirectory = [System.IO.Path]::GetDirectoryName($file)
+            Invoke-VstsTool -FileName $nugetPath -Arguments "restore `"$file`" -NonInteractive" -WorkingDirectory $slnDirectory
         }
 
         if ($Clean) {
@@ -80,7 +79,7 @@ function Invoke-BuildTools {
 }
 
 function Select-MSBuildLocation {
-    [cmdletbinding()]
+    [CmdletBinding()]
     param(
         [string]$Method,
         [string]$Location,

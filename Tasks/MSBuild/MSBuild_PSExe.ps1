@@ -1,4 +1,4 @@
-[cmdletbinding()]
+[CmdletBinding()]
 param([switch]$OmitDotSource)
 
 Trace-VstsEnteringInvocation $MyInvocation
@@ -10,10 +10,9 @@ Trace-VstsEnteringInvocation $MyInvocation
 [string]$Configuration = Get-VstsInput -Name 'Configuration'
 [bool]$Clean = Get-VstsInput -Name 'Clean' -AsBool
 [bool]$RestoreNuGetPackages = Get-VstsInput 'RestoreNuGetPackages' -AsBool
-[string]$LogProjectEvents = Get-VstsInput -Name 'LogProjectEvents' -AsBool
+[bool]$LogProjectEvents = Get-VstsInput -Name 'LogProjectEvents' -AsBool
 [string]$MSBuildVersion = Get-VstsInput -Name 'MSBuildVersion'
 [string]$MSBuildArchitecture = Get-VstsInput -Name 'MSBuildArchitecture'
-
 if (!$OmitDotSource) {
     . $PSScriptRoot\Helpers_PSExe.ps1
 }
