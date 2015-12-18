@@ -111,8 +111,7 @@
     "execution": {
         "PowerShellExeTask": {
             "target": "$(currentDirectory)\\VSBuild_PSExe.ps1",
-            "argumentFormat": "",
-            "workingDirectory": "$(currentDirectory)"
+            "argumentFormat": ""
         },
         "PowerShell": {
             "target": "$(currentDirectory)\\VSBuild.ps1",
