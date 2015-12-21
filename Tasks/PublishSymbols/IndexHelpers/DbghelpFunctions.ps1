@@ -42,12 +42,12 @@ function Get-DbghelpSourceFilePaths {
     $processHandle = [System.Diagnostics.Process]::GetCurrentProcess().Handle
     if ($processHandle -eq [System.IntPtr]::Zero) {
         throw (New-Win32ErrorMessage -Method 'Process.Handle')
-    } elseif (![IndexingHelpers.Dbghelp.NativeMethods]::SymInitialize($processHandle, $null, $false)) {
+    } elseif (![IndexHelpers.Dbghelp.NativeMethods]::SymInitialize($processHandle, $null, $false)) {
         throw (New-Win32ErrorMessage -Method 'SymInitialize')
     }
 
     try {
-        $null = [IndexingHelpers.Dbghelp.NativeMethods]::SymSetOptions([IndexingHelpers.Dbghelp.NativeMethods]::SymOptions.SYMOPT_NO_IMAGE_SEARCH)
+        $null = [IndexHelpers.Dbghelp.NativeMethods]::SymSetOptions([IndexHelpers.Dbghelp.NativeMethods]::SymOptions.SYMOPT_NO_IMAGE_SEARCH)
         [uint64]$moduleBase = 0
 
         # Open the symbols file.
@@ -70,13 +70,13 @@ function Get-DbghelpSourceFilePaths {
                 [guid]$guid = [guid]::Empty
                 [uint32]$val1 = 0
                 [uint32]$val2 = 0
-                if (![IndexingHelpers.Dbghelp.NativeMethods]::SymSrvGetFileIndexes($SymbolsFilePath, [ref]$guid, [ref]$val1, [ref]$val2, 0)) {
+                if (![IndexHelpers.Dbghelp.NativeMethods]::SymSrvGetFileIndexes($SymbolsFilePath, [ref]$guid, [ref]$val1, [ref]$val2, 0)) {
                     throw (New-IndexedSourcesNotRetrievedMessage -SymbolsFilePath $SymbolsFilePath -Message 'Symbol indexes could not be retrieved.')
                 }
 
                 # Load the symbols file in DbgHelp.
                 $moduleName = [System.IO.Path]::GetFileNameWithoutExtension($SymbolsFilePath)
-                $moduleBase = [IndexingHelpers.Dbghelp.NativeMethods]::SymLoadModuleEx(
+                $moduleBase = [IndexHelpers.Dbghelp.NativeMethods]::SymLoadModuleEx(
                     $processHandle,
                     $fileHandle,
                     $SymbolsFilePath,
@@ -92,30 +92,30 @@ function Get-DbghelpSourceFilePaths {
             }
 
             # Read the module info. Validate the file has symbol information and is a pdb type.
-            $moduleInfo = New-Object IndexingHelpers.Dbghelp.NativeMethods.IMAGEHLP_MODULE64
+            $moduleInfo = New-Object IndexHelpers.Dbghelp.NativeMethods.IMAGEHLP_MODULE64
             $moduleInfo.SizeOfStruct = [uint32][System.Runtime.InteropServices.Marshal]::SizeOf($moduleInfo)
-            if (![IndexingHelpers.Dbghelp.NativeMethods]::SymGetModuleInfo64($processHandle, $moduleBase, [ref]$moduleInfo)) {
+            if (![IndexHelpers.Dbghelp.NativeMethods]::SymGetModuleInfo64($processHandle, $moduleBase, [ref]$moduleInfo)) {
                 throw (New-IndexedSourcesNotRetrievedMessage -SymbolsFilePath $SymbolsFilePath -Message 'Symbol information could not be retrieved.')
-            } elseif ($moduleInfo.SymType -ne [IndexingHelpers.Dbghelp.NativeMethods]::SymType.SymPdb) {
+            } elseif ($moduleInfo.SymType -ne [IndexHelpers.Dbghelp.NativeMethods]::SymType.SymPdb) {
                 throw (New-IndexedSourcesNotRetrievedMessage -SymbolsFilePath $SymbolsFilePath -Message 'Symbol is not of type pdb.')
             }
 
             # Enumerate the indexed source files if the pdb file has source information.
             if ($moduleInfo.LineNumbers) {
                 $referencedSourceFiles = New-Object System.Collections.Generic.List[string]
-                if (![IndexingHelpers.Dbghelp.NativeMethods]::SymEnumSourceFilesWrapper($processHandle, $moduleBase, [ref]$referencedSourceFiles)) {
+                if (![IndexHelpers.Dbghelp.NativeMethods]::SymEnumSourceFilesWrapper($processHandle, $moduleBase, [ref]$referencedSourceFiles)) {
                     throw (New-Win32ErrorMessage -Method 'SymEnumSourceFiles')
                 }
 
                 return $referencedSourceFiles
             }
         } finally {
-            if ($moduleBase -gt 0 -and ![IndexingHelpers.Dbghelp.NativeMethods]::SymUnloadModule64($processHandle, $moduleBase)) {
+            if ($moduleBase -gt 0 -and ![IndexHelpers.Dbghelp.NativeMethods]::SymUnloadModule64($processHandle, $moduleBase)) {
                 throw (New-Win32ErrorMessage -Method 'SymUnloadModule64')
             }
         }
     } finally {
-        if (![IndexingHelpers.Dbghelp.NativeMethods]::SymCleanup($processHandle)){
+        if (![IndexHelpers.Dbghelp.NativeMethods]::SymCleanup($processHandle)){
             throw (New-Win32ErrorMessage -Method 'SymCleanup')
         }
     }
@@ -147,7 +147,7 @@ function Remove-DbghelpLibrary {
             return
         }
 
-        if (![IndexingHelpers.Dbghelp.NativeMethods]::FreeLibrary($HModule)) {
+        if (![IndexHelpers.Dbghelp.NativeMethods]::FreeLibrary($HModule)) {
             $errorCode = [System.Runtime.InteropServices.Marshal]::GetLastWin32Error()
             Write-Warning (Get-LocalizedString -Key "FailedToFreeLibraryDbghelpDllErrorCode0" -ArgumentList $errorCode)
         }
@@ -165,7 +165,7 @@ function Invoke-LoadLibrary {
 
     Trace-VstsEnteringInvocation $MyInvocation
     try {
-        [IndexingHelpers.Dbghelp.NativeMethods]::LoadLibrary($LiteralPath)
+        [IndexHelpers.Dbghelp.NativeMethods]::LoadLibrary($LiteralPath)
     } finally {
         Trace-VstsLeavingInvocation $MyInvocation
     }
@@ -177,7 +177,7 @@ function Invoke-LoadLibrary {
 # If the type has already been loaded once, then it is not loaded again.
 Write-Verbose "Adding dbghelp native methods."
 Add-Type -Debug:$false -TypeDefinition @'
-namespace IndexingHelpers.Dbghelp
+namespace IndexHelpers.Dbghelp
 {
     using System;
     using System.Runtime.InteropServices;

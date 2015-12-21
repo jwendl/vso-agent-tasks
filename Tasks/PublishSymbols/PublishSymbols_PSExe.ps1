@@ -1,5 +1,5 @@
 [CmdletBinding()]
-param([switch]$OmitDotSource)
+param()
 
 Trace-VstsEnteringInvocation $MyInvocation
 [string]$SymbolsPath = Get-VstsInput -Name 'SymbolsPath'
@@ -32,12 +32,14 @@ $pdbFiles = @(Find-VstsFiles -LiteralDirectory $SymbolsFolder -SearchPattern $Le
 Write-Host (Get-VstsLocString -Key "Found0SymbolFilesToIndex" -ArgumentList $pdbFiles.Count)
 
 # Index the sources.
+Import-Module -Name $PSScriptRoot\IndexHelpers\IndexingHelpers.psm1
 Invoke-IndexSources -SymbolsFilePaths $pdbFiles -TreatNotIndexedAsWarning:$TreatNotIndexedAsWarning
 
 # Publish the symbols.
 if ($SymbolsPath) {
     $utcNow = (Get-Date).ToUniversalTime()
     $semaphoreMessage = "Machine: $env:ComputerName, BuildUri: $env:Build_BuildUri, BuildNumber: $env:Build_BuildNumber, RepositoryName: $env:Build_Repository_Name, RepositoryUri: $env:Build_Repository_Uri, Team Project: $env:System_TeamProject, CollectionUri: $env:System_TeamFoundationCollectionUri at $utcNow UTC"
+    Import-Module -Name $PSScriptRoot\PublishHelpers\PublishHelpers.psm1
     Invoke-PublishSymbols -PdbFiles $pdbFiles -Share $SymbolsPath -Product $SymbolsProduct -Version $SymbolsVersion -MaximumWaitTime $maxWaitTime.TotalMilliseconds -MaximumSemaphoreAge $maxSemaphoreAge.TotalMinutes -ArtifactName $SymbolsArtifactName -SemaphoreMessage $semaphoreMessage
 } else {
     Write-Verbose "SymbolsPath was not set, publish symbols step was skipped."

@@ -13,6 +13,7 @@ function Invoke-IndexSources {
             return
         }
 
+# TODO: THIS SHOULD BE RESOLVED IN A DIFFERENT WAY
         # Resolve location of pdbstr.exe.
         if (!($pdbstrPath = Get-VstsAgentToolPath -Name 'Pdbstr\pdbstr.exe')) {
             throw (Get-VstsLocString -Key 'CouldNotFindPdbstrExe')
