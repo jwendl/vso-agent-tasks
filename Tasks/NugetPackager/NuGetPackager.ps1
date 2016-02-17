@@ -26,7 +26,7 @@ if ($b_versionByBuild)
     
     # Regular expression pattern to find the version in the build number 
     # and then apply it to the assemblies
-    $VersionRegex = "\d+\.\d+\.\d+\.\d+"
+    $VersionRegex = "\d+\.\d+\.\d+(?:\.\d+)?"
     
     # If this script is not running on a build server, remind user to 
     # set environment variables so that this script can be debugged
@@ -61,7 +61,7 @@ if ($b_versionByBuild)
        1 {}
        default 
           { 
-             Write-Warning "Found more than instance of version data in BUILD_BUILDNUMBER." 
+             Write-Warning "Found more than one instance of version data in BUILD_BUILDNUMBER." 
              Write-Warning "Will assume first instance is version."
           }
     }
@@ -101,44 +101,65 @@ foreach ($fileToPackage in $foundFiles)
     Write-Host "--File: `"$fileToPackage`""
 }
 
-foreach ($fileToPackage in $foundFiles)
+$useBuiltinNuGetExe = !$nuGetPath
+
+if($useBuiltinNuGetExe)
 {
-    $slnFolder = $(Get-ItemProperty -Path $fileToPackage -Name 'DirectoryName').DirectoryName
-    #Setup Nuget
-    Write-Host "Creating Nuget Arguments:"
-    $buildProps = "Configuration=$configurationToPack";
-    if ([string]::IsNullOrEmpty($buildProperties) -eq $false)
-    {
-        $buildProps = ($buildProps + ";" + $buildProperties)
-    }
-    $argsPack = "pack `"$fileToPackage`" -OutputDirectory `"$outputdir`" -Properties $buildProps";
-    
-    if ($b_versionByBuild)
-    {
-        $argsPack = ($argsPack + " -version $NewVersion")
-    }
-    if($nuGetAdditionalArgs)
-    {
-        $argsPack = ($argsPack + " " + $nuGetAdditionalArgs);
-    }    
-     
-    Write-Host "--ARGS: $argsPack"
-    
-    if(!$nuGetPath)
-    {
-        $nuGetPath = Get-ToolPath -Name 'NuGet.exe';
-    }
-    
-    if (-not $nuGetPath)
-    {
-        throw (Get-LocalizedString -Key "Unable to locate {0}" -ArgumentList 'nuget.exe')
-    }
-    
+    $nuGetPath = Get-ToolPath -Name 'NuGet.exe';
+}
+
+if (-not $nuGetPath)
+{
+    throw (Get-LocalizedString -Key "Unable to locate {0}" -ArgumentList 'nuget.exe')
+}
+
+$initialNuGetExtensionsPath = $env:NUGET_EXTENSIONS_PATH
+try
+{
     if ($env:NUGET_EXTENSIONS_PATH)
     {
-        Write-Host (Get-LocalizedString -Key "Detected NuGet extensions loader path. Environment variable NUGET_EXTENSIONS_PATH is set to: {0}" -ArgumentList $env:NUGET_EXTENSIONS_PATH)
+        if($useBuiltinNuGetExe)
+        {
+            # NuGet.exe extensions only work with a single specific version of nuget.exe. This causes problems
+            # whenever we update nuget.exe on the agent.
+            $env:NUGET_EXTENSIONS_PATH = $null
+            Write-Warning (Get-LocalizedString -Key "The NUGET_EXTENSIONS_PATH environment variable is set, but nuget.exe extensions are not supported when using the built-in NuGet implementation.")   
+        }
+        else
+        {
+            Write-Host (Get-LocalizedString -Key "Detected NuGet extensions loader path. Environment variable NUGET_EXTENSIONS_PATH is set to: {0}" -ArgumentList $env:NUGET_EXTENSIONS_PATH)
+        }
     }
 
-    Write-Host "Invoking nuget with $argsPack on $slnFolder"
-    Invoke-Tool -Path $nugetPath -Arguments "$argsPack" -WorkingFolder $slnFolder
+    foreach ($fileToPackage in $foundFiles)
+    {
+        $slnFolder = $(Get-ItemProperty -Path $fileToPackage -Name 'DirectoryName').DirectoryName
+        #Setup Nuget
+        Write-Host "Creating Nuget Arguments:"
+        $buildProps = "Configuration=$configurationToPack";
+        if ([string]::IsNullOrEmpty($buildProperties) -eq $false)
+        {
+            $buildProps = ($buildProps + ";" + $buildProperties)
+        }
+        $argsPack = "pack `"$fileToPackage`" -OutputDirectory `"$outputdir`" -Properties $buildProps";
+        
+        if ($b_versionByBuild)
+        {
+            $argsPack = ($argsPack + " -version $NewVersion")
+        }
+        if($nuGetAdditionalArgs)
+        {
+            $argsPack = ($argsPack + " " + $nuGetAdditionalArgs);
+        }    
+         
+        Write-Host "--ARGS: $argsPack"
+
+        Write-Host "Invoking nuget with $argsPack on $slnFolder"
+        Invoke-Tool -Path $nugetPath -Arguments "$argsPack" -WorkingFolder $slnFolder
+    }
 }
+finally
+{
+    $env:NUGET_EXTENSIONS_PATH = $initialNuGetExtensionsPath
+}
+

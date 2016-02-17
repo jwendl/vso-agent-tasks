@@ -3,7 +3,7 @@
   Licensed under the MIT license. See LICENSE file in the project root for full license information.
 */
 
-var tl = require('vso-task-lib'),
+var tl = require('vsts-task-lib'),
 	path = require('path'),
 	fs = require('fs'),
 	Q = require ('q'),
@@ -112,7 +112,7 @@ function processInputs() {
 			}
 
 			xcb.arg('-workspace');
-			xcb.arg(workspaceMatches[0]);
+			xcb.pathArg(workspaceMatches[0]);
 		} 
 		else {
 			console.error('Workspace specified but it does not exist or is not a directory');
@@ -191,7 +191,7 @@ function iosProfile(code) {
 
 function execBuild(code) {
 	// Add optional additional args
-	var args=tl.getDelimitedInput('args', ' ', false);			
+	var args=tl.getInput('args', false);			
 	if(args) {
 		xcb.arg(args);						
 	}
@@ -209,7 +209,7 @@ function packageApps(code) {
 		tl.debug('out: ' + out);
 		var outPath=path.join(out, 'build.sym');
 		tl.debug('outPath: ' + outPath);
-		appFolders = glob.sync(outPath + '/**/*.app')
+		appFolders = tl.glob(outPath + '/**/*.app')
 		if(appFolders) {
 			tl.debug(appFolders.length + ' apps found for packaging.');
 			var xcrunPath = tl.which('xcrun', true);	

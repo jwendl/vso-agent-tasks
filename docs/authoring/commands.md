@@ -1,7 +1,12 @@
-﻿## Logging Commands:
+## Logging Commands:
 
 The general format for a logging command is:
     ##vso[area.action property1=value;property2=value;...]message
+
+To invoke a logging command, simply emit the command via standard output. For example, from a PowerShell task:
+```
+"##vso[task.setvariable variable=testvar;]testvalue"
+```
 
 #### Task Logging Commands:
 <table>
@@ -127,12 +132,16 @@ The general format for a logging command is:
                 <p align="left">
                     variable=variable name (Required) <br>
                 </p>
+                 <p align="left">
+                    issecret=true (Optional) <br>
+                </p>
             </td>
             <td>
                 <p align="left">
-                    Set variable in variable service of taskcontext. The first task can set an variable, and following tasks are able to use the variable.<br>
+                    Sets a variable in the variable service of taskcontext. The first task can set a variable, and following tasks are able to use the variable. The variable is exposed to the following tasks as an environment variable. When 'issecret' is set to true, the value of the variable will be saved as secret and masked out from log.<br>
                     Example: <br>
-					##vso[task.setvariable variable=testvar;]testvalue<br> 
+                    ##vso[task.setvariable variable=testvar;]testvalue<br> 
+                    ##vso[task.setvariable variable=testvar;issecret=true;]testvalue<br> 
                 </p>
             </td>
             <td>
@@ -155,6 +164,9 @@ The general format for a logging command is:
                     Upload and attach attachment to current timeline record. <br>
                     Example: <br>
 					##vso[task.addattachment type=myattachmenttype;name=myattachmentname;]c:\myattachment.txt<br> 
+                    Upload and attach summary markdown to current timeline record. <br>
+                    Example: <br>
+					##vso[task.addattachment type=Distributedtask.Core.Summary;name=myattachmentname;]c:\myattachment.md<br> 
                 </p>
             </td>
             <td>
@@ -264,14 +276,14 @@ The general format for a logging command is:
             </td>
             <td>
                 <p align="left">
-                    Upload customized summary.md to build’s container “summaries” folder.<br>
-                    Example: <br>
-                    ##vso[build.uploadsummary]c:\testsummary.md
+                    <b>Deprecated.</b> <br>Markdown uploaded through this command won't show up in build summary view. <br>
+                    Use <i>##vso[task.addattachment type=Distributedtask.Core.Summary;name=myattachmentname;]c:\myattachment.md</i> instead. <br />
                 </p>
             </td>
             <td>
             </td>
-        </tr><tr>
+        </tr>
+        <tr>
             <td>
                 <p align="left">
                     ##vso[build.updatebuildnumber]build number
@@ -290,6 +302,27 @@ The general format for a logging command is:
             </td>
             <td>
                 1.88
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <p align="left">
+                    ##vso[build.addbuildtag]build tag
+                </p>
+            </td>
+            <td>
+                <p align="left">
+                </p>
+            </td>
+            <td>
+                <p align="left">
+                    Add a tag for current build.<br>
+                    Example: <br>
+                    ##vso[build.addbuildtag]Tag_UnitTestPassed
+                </p>
+            </td>
+            <td>
+                1.95
             </td>
         </tr>
     </tbody>
